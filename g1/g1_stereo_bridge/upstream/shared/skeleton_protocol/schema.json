@@ -1,0 +1,133 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Cross-end COCO17 human skeleton v1",
+  "type": "object",
+  "required": [
+    "schema",
+    "unit",
+    "joint_names",
+    "seq",
+    "timestamp_ns",
+    "session_id",
+    "source",
+    "clock_id",
+    "coordinate_system",
+    "calibration_id",
+    "model_id",
+    "joints"
+  ],
+  "properties": {
+    "schema": {
+      "const": "human_skeleton/1.0"
+    },
+    "unit": {
+      "const": "m"
+    },
+    "joint_names": {
+      "const": [
+        "nose",
+        "left_eye",
+        "right_eye",
+        "left_ear",
+        "right_ear",
+        "left_shoulder",
+        "right_shoulder",
+        "left_elbow",
+        "right_elbow",
+        "left_wrist",
+        "right_wrist",
+        "left_hip",
+        "right_hip",
+        "left_knee",
+        "right_knee",
+        "left_ankle",
+        "right_ankle"
+      ]
+    },
+    "seq": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "timestamp_ns": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "session_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "source": {
+      "type": "string",
+      "minLength": 1
+    },
+    "clock_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "coordinate_system": {
+      "type": "string",
+      "minLength": 1
+    },
+    "calibration_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "model_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "joints": {
+      "type": "array",
+      "minItems": 17,
+      "maxItems": 17,
+      "items": {
+        "type": "object",
+        "required": [
+          "xyz",
+          "valid",
+          "estimated",
+          "confidence"
+        ],
+        "properties": {
+          "valid": {
+            "type": "boolean"
+          },
+          "estimated": {
+            "type": "boolean"
+          },
+          "confidence": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          }
+        },
+        "if": {
+          "properties": {
+            "valid": {
+              "const": true
+            }
+          }
+        },
+        "then": {
+          "properties": {
+            "xyz": {
+              "type": "array",
+              "minItems": 3,
+              "maxItems": 3,
+              "items": {
+                "type": "number"
+              }
+            }
+          }
+        },
+        "else": {
+          "properties": {
+            "xyz": {
+              "type": "null"
+            }
+          }
+        }
+      }
+    }
+  }
+}

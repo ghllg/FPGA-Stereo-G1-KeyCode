@@ -1,0 +1,2 @@
+# Reuse the existing windows_vision virtual environment initially.
+-r ../windows_vision/requirements.txt

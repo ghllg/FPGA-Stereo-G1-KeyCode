@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>G1 Motion Studio · 实时骨架跟踪</title>
+  <link rel="stylesheet" href="/static/style.css?v=6">
+  <script type="importmap">{"imports":{"three":"/static/vendor/three.module.js"}}</script>
+</head>
+<body>
+<header><a class="brand" href="/"><span class="brand-mark">G1</span><span>MOTION STUDIO<small>本机实时动作实验室</small></span></a><div class="header-right"><span class="pill">BVH → GMR → G1</span><span id="connection" class="connection">● 正在连接本机</span></div></header>
+<main>
+  <section class="heading"><div><div class="eyebrow">LIVE MOTION RETARGETING</div><h1>BVH → G1 实时跟踪<span>29 DOF</span></h1><p>逐帧输入、在线解算，以完整 G1 实体呈现实时动作。</p></div><div class="mode-note"><span class="dot"></span>运动学骨架跟踪<small>输出参考姿态 · 不执行真机控制</small></div></section>
+  <div class="workspace">
+    <aside class="panel source-panel"><div class="section-title"><h2>01 <span>动作输入</span></h2><span class="tiny">SOURCE</span></div>
+      <label class="upload" id="dropzone"><input id="file" type="file" accept=".bvh"><span class="upload-icon">↥</span><strong>普通 BVH 上传</strong><small>点击选择或拖入 · 保留文件原始帧率</small></label>
+      <label class="upload" id="dropzone-7fps"><input id="file-7fps" type="file" accept=".bvh"><span class="upload-icon">7 FPS</span><strong>7 FPS 专用 BVH 上传</strong><small>点击或拖入 · 最高每秒 7 帧，动作不放慢</small><small>支持原始／平滑切换 · 不支持视频文件</small></label>
+      <div id="clip-name" class="clip-name">尚未选择动作</div><div id="clip-info" class="muted">支持 LAFAN1 骨架及自定义名称映射</div>
+      <div class="section-label">快速体验 <span>本地 BVH 示例</span></div><div id="samples" class="samples"></div>
+      <details><summary>输入坐标与骨骼映射</summary><div class="settings"><label>长度单位<select id="unit"><option value="cm">厘米 cm（LAFAN1）</option><option value="m">米 m</option></select></label><label>竖直方向<select id="up"><option>Y</option><option>Z</option></select></label></div><label class="map-label">标准名称 → 输入名称（JSON，可留空）<textarea id="mapping" rows="3" placeholder='{"Hips":"pelvis"}'></textarea></label><small>自定义骨架还需检查初始朝向与身体比例。未映射的必需骨骼会明确报错。</small></details>
+      <details><summary>接入外部实时帧</summary><p>外部发送器连接本机 WebSocket，先发骨架头，再持续发通道数值；页面自动显示结果。先停止网页播放以释放输入源。</p><code id="ws-address"></code><p>项目内的 <code>stream_bvh.py</code> 可直接按原始帧率发送文件。接口见本地 README。</p></details>
+    </aside>
+    <section class="center"><div class="stage"><div class="stage-top"><div><span id="live-badge" class="badge">等待输入</span><span id="scene-name">G1 实时动作场景</span><small id="scene-time">当前帧在线重定向 · 运动学参考姿态</small></div><div class="view-actions"><button id="smooth-view" class="subtle" aria-pressed="true" title="仅低帧率启用；不预测、不缓存未来帧，80 ms 内过渡到最新姿态">平滑：开</button><button id="compare-view" class="subtle">仅 G1 输出</button><button id="skeleton-view" class="subtle">查看骨架</button><button id="reset-camera" class="subtle">↺ 视角</button><button id="fullscreen" class="subtle">⛶ 全屏</button></div></div><div id="view-labels"><span>BVH 原始骨架<small>输入 · 米制比例</small></span><span>G1 实体机器人<small>输出 · 29 DOF</small></span></div><div id="viewport"></div><div class="stage-bottom"><span id="human-key"><i class="key human"></i>人体输入</span><span><i class="key robot"></i>G1 实时输出 · 29 DOF</span><span class="scene-help"><span id="smoothing-status">低帧平滑待命</span> · 视角联动</span></div><div id="empty-hint" class="empty-hint"><strong>准备好让动作动起来</strong><span>从左侧选择示例，或上传你的 BVH</span></div></div>
+      <div class="transport panel"><div class="transport-row"><button id="play" class="primary" disabled>▶ 开始跟踪</button><button id="stop" disabled>■ 停止</button><label class="check"><input id="loop" type="checkbox">循环</label><span id="time-label">00:00 / 00:00</span><button id="export" class="subtle" disabled>↓ 导出本次结果</button></div><input id="timeline" type="range" min="0" max="1" value="0" disabled aria-label="动作时间轴"><div class="transport-foot"><span id="frame-label">尚未收到动作帧</span><span id="stream-mode">仅上传当前帧 · 不读取未来动作</span></div></div>
+    </section>
+    <aside class="panel telemetry"><div class="section-title"><h2>02 <span>实时状态</span></h2><span class="tiny">TELEMETRY</span></div><div class="main-metric"><span>实际输出频率</span><strong id="fps">—<small>Hz</small></strong><div id="rate-note">等待有效输出</div></div><div class="metric-grid"><div><span>解算耗时</span><strong id="solve">—<small>ms</small></strong></div><div><span>收帧到输出</span><strong id="process">—<small>ms</small></strong></div><div><span>浏览器往返</span><strong id="rtt">—<small>ms</small></strong></div><div><span>已处理帧</span><strong id="count">0</strong></div></div><div class="chart-title">最近解算耗时 <span id="p95">P95 —</span></div><canvas id="chart" width="480" height="130" aria-label="最近解算耗时曲线"></canvas><div class="status-row"><span>服务端跳帧</span><strong id="dropped">0</strong></div><div class="status-row"><span>发送端跳帧</span><strong id="skipped">0</strong></div><div class="status-row"><span>输入通道</span><strong id="channels">—</strong></div><div class="status-row"><span>输出关节</span><strong>29</strong></div><div class="joint-heading">关节角预览 <span>°</span></div><div id="joints" class="joints"></div><div class="status-note">算力不足时优先跟随最新动作，跳帧如实记录。图中姿态来自当前帧在线求解。</div></aside>
+  </div><div id="message" role="status" class="message">加载本地三维模型与解算服务…</div>
+  <footer><span>LOCAL FIRST · 数据留在本机</span><span>GMR 重定向 / MuJoCo 正向运动学 / Three.js 场景</span></footer>
+</main><script type="module" src="/static/app.js?v=6"></script>
+</body></html>
